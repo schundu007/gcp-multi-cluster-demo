@@ -7,6 +7,8 @@ A production-grade demonstration of secure, private, multi-region GCP Kubernetes
 This project demonstrates how to build a zero-trust, private multi-cluster architecture on GCP:
 
 - **Private GKE Clusters** across two regions (us-central1, us-east1)
+  <img width="1597" height="854" alt="image" src="https://github.com/user-attachments/assets/4a55647b-9077-42d2-8137-de2e4341ca1a" />
+
 - **VPC Peering** for secure cross-cluster communication
 - **Internal Load Balancers** with global access (no public IPs)
 - **Firewall Rules** for network-level access control
@@ -15,6 +17,8 @@ This project demonstrates how to build a zero-trust, private multi-cluster archi
 - **SRE Observability** with Prometheus, Grafana, and Loki
 
 ## Architecture
+<img width="1206" height="1118" alt="image" src="https://github.com/user-attachments/assets/1473d01b-27c6-4adb-970e-9c69df3a6108" />
+
 
 ```
 ┌────────────────────────────────────────────────────────────────────────────┐
