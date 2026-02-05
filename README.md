@@ -1,10 +1,10 @@
-# CIROOS - Multi-Cluster Network Security Demo
+# GCP Multi-Cluster Network Security Demo
 
 A production-grade demonstration of secure, private, multi-region GCP Kubernetes infrastructure with instant access revocation capabilities and SRE observability.
 
 ## Overview
 
-CIROOS demonstrates how to build a zero-trust, private multi-cluster architecture on GCP:
+This project demonstrates how to build a zero-trust, private multi-cluster architecture on GCP:
 
 - **Private GKE Clusters** across two regions (us-central1, us-east1)
 - **VPC Peering** for secure cross-cluster communication
@@ -131,7 +131,7 @@ Open http://localhost:8501
 ### 5. Start Port Forwarding
 
 ```bash
-kubectl --context gke-c1 port-forward svc/grafana 3001:3000 -n monitoring &
+kubectl --context gke-c1 port-forward svc/grafana 3002:3000 -n monitoring &
 kubectl --context gke-c1 port-forward svc/prometheus 9090:9090 -n monitoring &
 kubectl --context gke-c1 port-forward svc/frontend 8085:80 -n bank-of-anthos &
 ```
@@ -234,7 +234,7 @@ For production deployment:
 | Service | URL |
 |---------|-----|
 | Demo UI | http://localhost:8501 |
-| Grafana | http://localhost:3001 |
+| Grafana | http://localhost:3002 |
 | Prometheus | http://localhost:9090 |
 | Bank of Anthos | http://localhost:8085 |
 
@@ -243,7 +243,7 @@ For production deployment:
 ### Port Forwarding
 ```bash
 # Start all port forwards
-kubectl --context gke-c1 port-forward svc/grafana 3001:3000 -n monitoring &
+kubectl --context gke-c1 port-forward svc/grafana 3002:3000 -n monitoring &
 kubectl --context gke-c1 port-forward svc/prometheus 9090:9090 -n monitoring &
 kubectl --context gke-c1 port-forward svc/frontend 8085:80 -n bank-of-anthos &
 ```
@@ -289,4 +289,4 @@ MIT
 
 ## Author
 
-Built with CIROOS - SRE Agent Platform
+Built for GCP Multi-Cluster Security Demo

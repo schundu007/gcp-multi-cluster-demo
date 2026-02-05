@@ -1,7 +1,23 @@
 #!/usr/bin/env python3
 """
-CIROOS - Multi-Cluster Network Security Demo
-2-Page Structure: Overview → Demo
+GCP Multi-Cluster Network Security Demo
+
+A production-grade demonstration of secure, private, multi-region GCP Kubernetes
+infrastructure with instant access revocation capabilities and SRE observability.
+
+Architecture:
+    - Cluster C1 (us-central1): Frontend, LoadGenerator, Accounts-DB
+    - Cluster C2 (us-east1): Backend microservices (userservice, contacts,
+      balancereader, transactionhistory, ledgerwriter), Ledger-DB
+
+Security Features:
+    - Private GKE Clusters (no public IPs)
+    - VPC Peering for cross-region connectivity
+    - Internal Load Balancers with global access
+    - Firewall rules for network segmentation
+    - NetworkPolicies for pod-level control
+
+Copyright (c) 2024. All rights reserved.
 """
 
 import streamlit as st
@@ -9,10 +25,11 @@ import subprocess
 import time
 import socket
 import os
-from datetime import datetime
+import random
+from pathlib import Path
 
 st.set_page_config(
-    page_title="CIROOS Demo",
+    page_title="GCP Multi-Cluster Demo",
     page_icon="◉",
     layout="wide",
     initial_sidebar_state="collapsed"
@@ -234,10 +251,10 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 # Configuration
-GRAFANA_URL = "http://localhost:3001"
+GRAFANA_URL = "http://localhost:3002"
 FRONTEND_URL = "http://localhost:8085"
 
-# GCP-style SVG Icons
+# GCP-style SVG Icons (only icons actively used in the application)
 ICONS = {
     'gke': '''<svg viewBox="0 0 24 24" width="24" height="24"><path fill="{color}" d="M12 2L2 7v10l10 5 10-5V7L12 2zm0 2.18l6.9 3.45L12 11.09 5.1 7.63 12 4.18zM4 8.82l7 3.5v7.36l-7-3.5V8.82zm9 10.86v-7.36l7-3.5v7.36l-7 3.5z"/></svg>''',
     'service': '''<svg viewBox="0 0 24 24" width="18" height="18"><path fill="{color}" d="M21 3H3c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h18c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H3V5h18v14zM9 7H7v2h2V7zm4 0h-2v2h2V7zm4 0h-2v2h2V7z"/></svg>''',
@@ -246,11 +263,6 @@ ICONS = {
     'vpc': '''<svg viewBox="0 0 24 24" width="20" height="20"><path fill="{color}" d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 17.93c-3.95-.49-7-3.85-7-7.93 0-.62.08-1.21.21-1.79L9 15v1c0 1.1.9 2 2 2v1.93zm6.9-2.54c-.26-.81-1-1.39-1.9-1.39h-1v-3c0-.55-.45-1-1-1H8v-2h2c.55 0 1-.45 1-1V7h2c1.1 0 2-.9 2-2v-.41c2.93 1.19 5 4.06 5 7.41 0 2.08-.8 3.97-2.1 5.39z"/></svg>''',
     'lb': '''<svg viewBox="0 0 24 24" width="20" height="20"><path fill="{color}" d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8z"/><circle cx="12" cy="12" r="3" fill="{color}"/><path fill="{color}" d="M12 6v2M12 16v2M6 12h2M16 12h2" stroke="{color}" stroke-width="2"/></svg>''',
     'policy': '''<svg viewBox="0 0 24 24" width="20" height="20"><path fill="{color}" d="M19.35 10.04C18.67 6.59 15.64 4 12 4 9.11 4 6.6 5.64 5.35 8.04 2.34 8.36 0 10.91 0 14c0 3.31 2.69 6 6 6h13c2.76 0 5-2.24 5-5 0-2.64-2.05-4.78-4.65-4.96zM10 17l-3.5-3.5 1.41-1.41L10 14.17l4.59-4.59L16 11l-6 6z"/></svg>''',
-    'monitoring': '''<svg viewBox="0 0 24 24" width="20" height="20"><path fill="{color}" d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H5V5h14v14zM7 10h2v7H7zm4-3h2v10h-2zm4 6h2v4h-2z"/></svg>''',
-    'app': '''<svg viewBox="0 0 24 24" width="20" height="20"><path fill="{color}" d="M4 8h4V4H4v4zm6 12h4v-4h-4v4zm-6 0h4v-4H4v4zm0-6h4v-4H4v4zm6 0h4v-4h-4v4zm6-10v4h4V4h-4zm-6 4h4V4h-4v4zm6 6h4v-4h-4v4zm0 6h4v-4h-4v4z"/></svg>''',
-    'cluster': '''<svg viewBox="0 0 24 24" width="20" height="20"><path fill="{color}" d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 17.93c-3.95-.49-7-3.85-7-7.93 0-.62.08-1.21.21-1.79L9 15v1c0 1.1.9 2 2 2v1.93zm6.9-2.54c-.26-.81-1-1.39-1.9-1.39h-1v-3c0-.55-.45-1-1-1H8v-2h2c.55 0 1-.45 1-1V7h2c1.1 0 2-.9 2-2v-.41c2.93 1.19 5 4.06 5 7.41 0 2.08-.8 3.97-2.1 5.39z"/></svg>''',
-    'online': '''<svg viewBox="0 0 24 24" width="20" height="20"><path fill="{color}" d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/></svg>''',
-    'settings': '''<svg viewBox="0 0 24 24" width="18" height="18"><path fill="{color}" d="M19.14 12.94c.04-.31.06-.63.06-.94 0-.31-.02-.63-.06-.94l2.03-1.58c.18-.14.23-.41.12-.61l-1.92-3.32c-.12-.22-.37-.29-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94l-.36-2.54c-.04-.24-.24-.41-.48-.41h-3.84c-.24 0-.43.17-.47.41l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96c-.22-.08-.47 0-.59.22L2.74 8.87c-.12.21-.08.47.12.61l2.03 1.58c-.04.31-.06.63-.06.94s.02.63.06.94l-2.03 1.58c-.18.14-.23.41-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c.24 0 .44-.17.47-.41l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32c.12-.22.07-.47-.12-.61l-2.01-1.58zM12 15.6c-1.98 0-3.6-1.62-3.6-3.6s1.62-3.6 3.6-3.6 3.6 1.62 3.6 3.6-1.62 3.6-3.6 3.6z"/></svg>''',
 }
 
 def icon(name, color="#FF6400", size=None):
@@ -264,7 +276,7 @@ def icon(name, color="#FF6400", size=None):
     return svg
 
 PORT_FORWARD_SERVICES = [
-    {'name': 'Grafana', 'context': 'gke-c1', 'namespace': 'monitoring', 'service': 'grafana', 'local_port': 3001, 'remote_port': 3000},
+    {'name': 'Grafana', 'context': 'gke-c1', 'namespace': 'monitoring', 'service': 'grafana', 'local_port': 3002, 'remote_port': 3000},
     {'name': 'Prometheus', 'context': 'gke-c1', 'namespace': 'monitoring', 'service': 'prometheus', 'local_port': 9090, 'remote_port': 9090},
     {'name': 'Loki', 'context': 'gke-c1', 'namespace': 'monitoring', 'service': 'loki', 'local_port': 3100, 'remote_port': 3100},
     {'name': 'Frontend', 'context': 'gke-c1', 'namespace': 'bank-of-anthos', 'service': 'frontend', 'local_port': 8085, 'remote_port': 80},
@@ -350,7 +362,7 @@ def render_header():
     """Render the common header with navigation"""
     st.markdown("""
     <div style="text-align: center; padding: 20px 0 15px;">
-        <div style="font-family: Orbitron; font-size: 2.5rem; font-weight: 900; background: linear-gradient(135deg, #FF6400, #FF8533, #FFB380); -webkit-background-clip: text; -webkit-text-fill-color: transparent; letter-spacing: 6px;">CIROOS</div>
+        <div style="font-family: Orbitron; font-size: 1.8rem; font-weight: 900; background: linear-gradient(135deg, #FF6400, #FF8533, #FFB380); -webkit-background-clip: text; -webkit-text-fill-color: transparent; letter-spacing: 4px;">GCP MULTI-CLUSTER</div>
         <div style="font-family: Space Grotesk; font-size: 0.9rem; color: #94A3B8; letter-spacing: 3px; text-transform: uppercase; margin-top: 4px;">Multi-Cluster Network Security</div>
     </div>
     """, unsafe_allow_html=True)
@@ -454,7 +466,6 @@ if st.session_state.current_page == 'overview':
 
     # Infrastructure diagram image
     st.markdown("<br>", unsafe_allow_html=True)
-    import os
     infra_image_path = os.path.join(os.path.dirname(__file__), 'assets', 'infrastructure.png')
     if os.path.exists(infra_image_path):
         st.image(infra_image_path, use_container_width=True)
@@ -798,7 +809,7 @@ elif st.session_state.current_page == 'demo':
         """, unsafe_allow_html=True)
 
     # Metrics Row
-    grafana_up = check_port(3001)
+    grafana_up = check_port(3002)
     frontend_up = check_port(8085)
     connected = sum(1 for s in st.session_state.service_statuses.values() if s)
 
@@ -909,7 +920,6 @@ elif st.session_state.current_page == 'demo':
                 st.markdown("<br>", unsafe_allow_html=True)
                 st.markdown('<div class="section-header" style="color: #EF4444 !important; -webkit-text-fill-color: #EF4444 !important;">Live Error Stream</div>', unsafe_allow_html=True)
 
-                import random
                 timestamps = [f"16:2{random.randint(0,9)}:{random.randint(10,59)}" for _ in range(10)]
 
                 error_logs = f"""
@@ -930,7 +940,7 @@ elif st.session_state.current_page == 'demo':
 
     # TAB 2: OBSERVABILITY
     with tab2:
-        if check_port(3001):
+        if check_port(3002):
             dash0, dash1, dash2, dash3 = st.tabs(["SRE METRICS", "CROSS-CLUSTER METRICS", "ERRORS & FAILURES", "LOKI LOGS"])
 
             with dash0:
@@ -1055,19 +1065,19 @@ elif st.session_state.current_page == 'demo':
 
             with dash1:
                 st.components.v1.iframe(
-                    "http://localhost:3001/d/cross-cluster-boa/cross-cluster-metrics-bank-of-anthos?orgId=1&kiosk&refresh=10s",
+                    "http://localhost:3002/d/cross-cluster-boa/cross-cluster-metrics-bank-of-anthos?orgId=1&kiosk&refresh=10s",
                     height=600, scrolling=True
                 )
 
             with dash2:
                 st.components.v1.iframe(
-                    "http://localhost:3001/d/errors-failures/critical-errors-and-failures-dashboard?orgId=1&kiosk&refresh=10s",
+                    "http://localhost:3002/d/errors-failures/critical-errors-and-failures-dashboard?orgId=1&kiosk&refresh=10s",
                     height=600, scrolling=True
                 )
 
             with dash3:
                 st.components.v1.iframe(
-                    "http://localhost:3001/d/loki-logs-boa/loki-logs-bank-of-anthos?orgId=1&kiosk&refresh=30s",
+                    "http://localhost:3002/d/loki-logs-boa/loki-logs-bank-of-anthos?orgId=1&kiosk&refresh=30s",
                     height=600, scrolling=True
                 )
 
@@ -1113,9 +1123,11 @@ elif st.session_state.current_page == 'demo':
         c1, c2 = st.columns(2)
         with c1:
             if st.button("ENABLE ALL", disabled=all_active, use_container_width=True):
-                subprocess.run(["/bin/bash", "/Users/chundu/ciroos/demo-ui/start-portforward.sh"],
-                               capture_output=True, cwd="/Users/chundu/ciroos/demo-ui")
-                time.sleep(5)
+                with st.spinner("Starting port forwards..."):
+                    # Use the shell script which has proper environment setup
+                    script_path = Path(__file__).parent / "start-portforward.sh"
+                    os.system(f"bash {script_path}")
+                    time.sleep(3)
                 st.rerun()
         with c2:
             if st.button("DISABLE ALL", use_container_width=True):
