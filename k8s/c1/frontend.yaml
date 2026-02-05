@@ -1,0 +1,119 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: frontend
+  namespace: bank-of-anthos
+  labels:
+    app: frontend
+    tier: frontend
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: frontend
+  template:
+    metadata:
+      labels:
+        app: frontend
+        tier: frontend
+    spec:
+      terminationGracePeriodSeconds: 5
+      containers:
+        - name: frontend
+          image: us-central1-docker.pkg.dev/bank-of-anthos-ci/bank-of-anthos/frontend:v0.6.8
+          ports:
+            - name: http
+              containerPort: 8085
+          env:
+            - name: VERSION
+              value: "v0.6.5"
+            - name: PORT
+              value: "8085"
+            - name: ENABLE_TRACING
+              value: "false"
+            - name: SCHEME
+              value: "http"
+            # Cross-cluster service addresses (direct ILB IPs in C2)
+            - name: BALANCES_API_ADDR
+              value: "10.1.10.12:8085"
+            - name: CONTACTS_API_ADDR
+              value: "10.1.10.11:8085"
+            - name: HISTORY_API_ADDR
+              value: "10.1.10.13:8085"
+            - name: TRANSACTIONS_API_ADDR
+              value: "10.1.10.14:8085"
+            - name: USERSERVICE_API_ADDR
+              value: "10.1.10.10:8085"
+            - name: DEFAULT_USERNAME
+              valueFrom:
+                configMapKeyRef:
+                  name: demo-data-config
+                  key: DEMO_LOGIN_USERNAME
+            - name: DEFAULT_PASSWORD
+              valueFrom:
+                configMapKeyRef:
+                  name: demo-data-config
+                  key: DEMO_LOGIN_PASSWORD
+            - name: REGISTERED_OAUTH_CLIENT_ID
+              valueFrom:
+                configMapKeyRef:
+                  name: oauth-config
+                  key: DEMO_OAUTH_CLIENT_ID
+                  optional: true
+            - name: ALLOWED_OAUTH_REDIRECT_URI
+              valueFrom:
+                configMapKeyRef:
+                  name: oauth-config
+                  key: DEMO_OAUTH_REDIRECT_URI
+                  optional: true
+          envFrom:
+            - configMapRef:
+                name: environment-config
+          readinessProbe:
+            httpGet:
+              path: /ready
+              port: 8085
+            initialDelaySeconds: 10
+            periodSeconds: 5
+            timeoutSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /ready
+              port: 8085
+            initialDelaySeconds: 60
+            periodSeconds: 15
+            timeoutSeconds: 30
+          resources:
+            requests:
+              cpu: 100m
+              memory: 64Mi
+            limits:
+              cpu: 500m
+              memory: 256Mi
+          volumeMounts:
+            - name: publickey
+              mountPath: /tmp/.ssh
+              readOnly: true
+      volumes:
+        - name: publickey
+          secret:
+            secretName: jwt-key
+            items:
+              - key: jwtRS256.key.pub
+                path: publickey
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: frontend
+  namespace: bank-of-anthos
+  labels:
+    app: frontend
+spec:
+  type: ClusterIP
+  selector:
+    app: frontend
+  ports:
+    - name: http
+      port: 80
+      targetPort: 8085

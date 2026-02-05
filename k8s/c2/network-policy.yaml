@@ -1,0 +1,174 @@
+# Default deny all traffic in the namespace
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: default-deny-all
+  namespace: bank-of-anthos
+spec:
+  podSelector: {}
+  policyTypes:
+    - Ingress
+    - Egress
+---
+# Backend services: Allow ingress from C1 (frontend) and health checks
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: backend-ingress
+  namespace: bank-of-anthos
+spec:
+  podSelector:
+    matchLabels:
+      tier: backend
+  policyTypes:
+    - Ingress
+  ingress:
+    # Allow from C1 VPC (node CIDR and pod CIDR)
+    - from:
+        - ipBlock:
+            cidr: 10.0.0.0/16
+        - ipBlock:
+            cidr: 10.0.16.0/20
+      ports:
+        - protocol: TCP
+          port: 8085
+    # Allow from C2 internal (for internal testing)
+    - from:
+        - ipBlock:
+            cidr: 10.1.0.0/16
+        - ipBlock:
+            cidr: 10.1.16.0/20
+      ports:
+        - protocol: TCP
+          port: 8085
+    # Allow GCP health checks for ILB
+    - from:
+        - ipBlock:
+            cidr: 35.191.0.0/16
+        - ipBlock:
+            cidr: 130.211.0.0/22
+        - ipBlock:
+            cidr: 209.85.152.0/22
+        - ipBlock:
+            cidr: 209.85.204.0/22
+      ports:
+        - protocol: TCP
+          port: 8085
+    # Allow internal cluster traffic (for ledgerwriter -> balancereader)
+    - from:
+        - podSelector:
+            matchLabels:
+              tier: backend
+      ports:
+        - protocol: TCP
+          port: 8085
+---
+# Backend services: Allow egress to C1 accounts-db and local ledger-db
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: backend-egress
+  namespace: bank-of-anthos
+spec:
+  podSelector:
+    matchLabels:
+      tier: backend
+  policyTypes:
+    - Egress
+  egress:
+    # Allow to C1 VPC (accounts-db)
+    - to:
+        - ipBlock:
+            cidr: 10.0.0.0/16
+      ports:
+        - protocol: TCP
+          port: 5432
+    # Allow to local ledger-db
+    - to:
+        - podSelector:
+            matchLabels:
+              app: ledger-db
+      ports:
+        - protocol: TCP
+          port: 5432
+    # Allow to local balancereader (for ledgerwriter)
+    - to:
+        - podSelector:
+            matchLabels:
+              app: balancereader
+      ports:
+        - protocol: TCP
+          port: 8085
+    # Allow DNS resolution
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: kube-system
+      ports:
+        - protocol: UDP
+          port: 53
+        - protocol: TCP
+          port: 53
+---
+# ledger-db: Allow ingress from local backend services only
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: ledger-db-ingress
+  namespace: bank-of-anthos
+spec:
+  podSelector:
+    matchLabels:
+      app: ledger-db
+  policyTypes:
+    - Ingress
+  ingress:
+    # Allow from backend services in same cluster
+    - from:
+        - podSelector:
+            matchLabels:
+              tier: backend
+      ports:
+        - protocol: TCP
+          port: 5432
+    # Allow internal replication (if we add replicas)
+    - from:
+        - podSelector:
+            matchLabels:
+              app: ledger-db
+      ports:
+        - protocol: TCP
+          port: 5432
+---
+# ledger-db: Allow egress for DNS and responses
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: ledger-db-egress
+  namespace: bank-of-anthos
+spec:
+  podSelector:
+    matchLabels:
+      app: ledger-db
+  policyTypes:
+    - Egress
+  egress:
+    # Allow DNS resolution
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: kube-system
+      ports:
+        - protocol: UDP
+          port: 53
+        - protocol: TCP
+          port: 53
+    # Allow responses to backend services (stateful connections)
+    - to:
+        - podSelector:
+            matchLabels:
+              tier: backend
+      ports:
+        - protocol: TCP
+          port: 1024
+          endPort: 65535

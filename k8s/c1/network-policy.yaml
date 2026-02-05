@@ -1,0 +1,219 @@
+# Default deny all traffic in the namespace
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: default-deny-all
+  namespace: bank-of-anthos
+spec:
+  podSelector: {}
+  policyTypes:
+    - Ingress
+    - Egress
+---
+# Frontend: Allow egress to C2 backends (ILBs), local proxy services, and DNS
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: frontend-egress
+  namespace: bank-of-anthos
+spec:
+  podSelector:
+    matchLabels:
+      app: frontend
+  policyTypes:
+    - Egress
+  egress:
+    # Allow egress to C2 backend services via ILBs
+    - to:
+        - ipBlock:
+            cidr: 10.1.0.0/16
+      ports:
+        - protocol: TCP
+          port: 8085
+    # Allow egress to local proxy services (ClusterIP range)
+    - to:
+        - ipBlock:
+            cidr: 10.0.32.0/20
+      ports:
+        - protocol: TCP
+          port: 8085
+    # Allow DNS resolution
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: kube-system
+      ports:
+        - protocol: UDP
+          port: 53
+        - protocol: TCP
+          port: 53
+---
+# Frontend: Allow ingress from loadgenerator and port-forward
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: frontend-ingress
+  namespace: bank-of-anthos
+spec:
+  podSelector:
+    matchLabels:
+      app: frontend
+  policyTypes:
+    - Ingress
+  ingress:
+    # Allow from loadgenerator
+    - from:
+        - podSelector:
+            matchLabels:
+              app: loadgenerator
+      ports:
+        - protocol: TCP
+          port: 8085
+    # Allow from within the cluster (for port-forward, health checks)
+    - from:
+        - ipBlock:
+            cidr: 10.0.0.0/8
+      ports:
+        - protocol: TCP
+          port: 8085
+---
+# Loadgenerator: Allow egress to frontend and DNS
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: loadgenerator-egress
+  namespace: bank-of-anthos
+spec:
+  podSelector:
+    matchLabels:
+      app: loadgenerator
+  policyTypes:
+    - Egress
+  egress:
+    # Allow to frontend service
+    - to:
+        - podSelector:
+            matchLabels:
+              app: frontend
+      ports:
+        - protocol: TCP
+          port: 8085
+    # Allow DNS
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: kube-system
+      ports:
+        - protocol: UDP
+          port: 53
+        - protocol: TCP
+          port: 53
+---
+# accounts-db: Allow ingress from C2 backends (via VPC peering)
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: accounts-db-ingress
+  namespace: bank-of-anthos
+spec:
+  podSelector:
+    matchLabels:
+      app: accounts-db
+  policyTypes:
+    - Ingress
+  ingress:
+    # Allow from C2 VPC (userservice, contacts)
+    - from:
+        - ipBlock:
+            cidr: 10.1.0.0/16
+      ports:
+        - protocol: TCP
+          port: 5432
+    # Allow GCP health checks for ILB
+    - from:
+        - ipBlock:
+            cidr: 35.191.0.0/16
+        - ipBlock:
+            cidr: 130.211.0.0/22
+        - ipBlock:
+            cidr: 209.85.152.0/22
+        - ipBlock:
+            cidr: 209.85.204.0/22
+      ports:
+        - protocol: TCP
+          port: 5432
+    # Allow internal replication (if we add replicas)
+    - from:
+        - podSelector:
+            matchLabels:
+              app: accounts-db
+      ports:
+        - protocol: TCP
+          port: 5432
+---
+# accounts-db: Allow egress for DNS and responses to C2 backends
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: accounts-db-egress
+  namespace: bank-of-anthos
+spec:
+  podSelector:
+    matchLabels:
+      app: accounts-db
+  policyTypes:
+    - Egress
+  egress:
+    # Allow DNS resolution
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: kube-system
+      ports:
+        - protocol: UDP
+          port: 53
+        - protocol: TCP
+          port: 53
+    # Allow responses to C2 backends (stateful connections)
+    - to:
+        - ipBlock:
+            cidr: 10.1.0.0/16
+      ports:
+        - protocol: TCP
+          port: 1024
+          endPort: 65535
+    # Allow internal replication responses
+    - to:
+        - podSelector:
+            matchLabels:
+              app: accounts-db
+      ports:
+        - protocol: TCP
+          port: 5432
+---
+# Allow Prometheus to scrape all pods in bank-of-anthos namespace
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-prometheus-scrape
+  namespace: bank-of-anthos
+spec:
+  podSelector: {}
+  policyTypes:
+    - Ingress
+  ingress:
+    # Allow from Prometheus in monitoring namespace
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: monitoring
+          podSelector:
+            matchLabels:
+              app: prometheus
+      ports:
+        - protocol: TCP
+          port: 8085
+        - protocol: TCP
+          port: 5432
+        - protocol: TCP
+          port: 9090

@@ -1,0 +1,119 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: prometheus-config
+  namespace: monitoring
+data:
+  prometheus.yml: |
+    global:
+      scrape_interval: 15s
+      evaluation_interval: 15s
+
+    # Alerting rules (optional)
+    rule_files:
+      # - "alert_rules.yml"
+
+    scrape_configs:
+      # Scrape Prometheus itself
+      - job_name: 'prometheus'
+        static_configs:
+          - targets: ['localhost:9090']
+
+      # Scrape C2 backend services via ILBs (cross-cluster)
+      # Using /ready endpoint to check connectivity (services don't expose /metrics natively)
+      - job_name: 'c2-backend-services'
+        metrics_path: /ready
+        scrape_interval: 10s
+        scrape_timeout: 5s
+        static_configs:
+          - targets:
+              - '10.1.10.10:8085'  # userservice
+              - '10.1.10.11:8085'  # contacts
+              - '10.1.10.12:8085'  # balancereader
+              - '10.1.10.13:8085'  # transactionhistory
+              - '10.1.10.14:8085'  # ledgerwriter
+            labels:
+              cluster: 'c2'
+              tier: 'backend'
+        relabel_configs:
+          - source_labels: [__address__]
+            regex: '10\.1\.10\.10:.*'
+            target_label: app
+            replacement: 'userservice'
+          - source_labels: [__address__]
+            regex: '10\.1\.10\.11:.*'
+            target_label: app
+            replacement: 'contacts'
+          - source_labels: [__address__]
+            regex: '10\.1\.10\.12:.*'
+            target_label: app
+            replacement: 'balancereader'
+          - source_labels: [__address__]
+            regex: '10\.1\.10\.13:.*'
+            target_label: app
+            replacement: 'transactionhistory'
+          - source_labels: [__address__]
+            regex: '10\.1\.10\.14:.*'
+            target_label: app
+            replacement: 'ledgerwriter'
+
+      # Scrape C1 frontend service - connectivity check
+      - job_name: 'c1-frontend'
+        metrics_path: /ready
+        scrape_interval: 10s
+        kubernetes_sd_configs:
+          - role: pod
+            namespaces:
+              names:
+                - bank-of-anthos
+        relabel_configs:
+          - source_labels: [__meta_kubernetes_pod_label_app]
+            action: keep
+            regex: frontend
+          - source_labels: [__meta_kubernetes_pod_ip]
+            target_label: __address__
+            replacement: '${1}:8085'
+          - source_labels: [__meta_kubernetes_pod_label_app]
+            target_label: app
+          - target_label: cluster
+            replacement: 'c1'
+          - target_label: tier
+            replacement: 'frontend'
+
+      # Scrape kube-state-metrics
+      - job_name: 'kube-state-metrics'
+        static_configs:
+          - targets: ['kube-state-metrics:8080']
+
+      # Kubernetes API server
+      - job_name: 'kubernetes-apiservers'
+        kubernetes_sd_configs:
+          - role: endpoints
+        scheme: https
+        tls_config:
+          ca_file: /var/run/secrets/kubernetes.io/serviceaccount/ca.crt
+          insecure_skip_verify: true
+        bearer_token_file: /var/run/secrets/kubernetes.io/serviceaccount/token
+        relabel_configs:
+          - source_labels: [__meta_kubernetes_namespace, __meta_kubernetes_service_name, __meta_kubernetes_endpoint_port_name]
+            action: keep
+            regex: default;kubernetes;https
+
+      # Kubelet/cAdvisor metrics for container metrics
+      - job_name: 'kubelet'
+        scheme: https
+        tls_config:
+          ca_file: /var/run/secrets/kubernetes.io/serviceaccount/ca.crt
+          insecure_skip_verify: true
+        bearer_token_file: /var/run/secrets/kubernetes.io/serviceaccount/token
+        kubernetes_sd_configs:
+          - role: node
+        relabel_configs:
+          - action: labelmap
+            regex: __meta_kubernetes_node_label_(.+)
+          - target_label: __address__
+            replacement: kubernetes.default.svc:443
+          - source_labels: [__meta_kubernetes_node_name]
+            regex: (.+)
+            target_label: __metrics_path__
+            replacement: /api/v1/nodes/${1}/proxy/metrics/cadvisor

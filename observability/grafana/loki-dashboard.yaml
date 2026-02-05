@@ -1,0 +1,177 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: grafana-dashboards-loki
+  namespace: monitoring
+  labels:
+    grafana_dashboard: "1"
+data:
+  loki-logs.json: |
+    {
+      "annotations": {
+        "list": [
+          {
+            "builtIn": 1,
+            "datasource": { "type": "grafana", "uid": "-- Grafana --" },
+            "enable": true,
+            "hide": true,
+            "iconColor": "rgba(0, 211, 255, 1)",
+            "name": "Annotations & Alerts",
+            "type": "dashboard"
+          }
+        ]
+      },
+      "editable": true,
+      "fiscalYearStartMonth": 0,
+      "graphTooltip": 0,
+      "id": null,
+      "links": [],
+      "liveNow": false,
+      "panels": [
+        {
+          "collapsed": false,
+          "gridPos": { "h": 1, "w": 24, "x": 0, "y": 0 },
+          "id": 100,
+          "panels": [],
+          "title": "Log Stream Overview",
+          "type": "row"
+        },
+        {
+          "datasource": { "type": "loki", "uid": "P8E80F9AEF21F6940" },
+          "description": "Log volume by namespace",
+          "fieldConfig": {
+            "defaults": {
+              "color": { "mode": "palette-classic" },
+              "custom": { "axisCenteredZero": false, "axisColorMode": "text", "axisLabel": "", "axisPlacement": "auto", "barAlignment": 0, "drawStyle": "bars", "fillOpacity": 50, "gradientMode": "none", "hideFrom": { "legend": false, "tooltip": false, "viz": false }, "lineInterpolation": "linear", "lineWidth": 1, "pointSize": 5, "scaleDistribution": { "type": "linear" }, "showPoints": "auto", "spanNulls": false, "stacking": { "group": "A", "mode": "normal" }, "thresholdsStyle": { "mode": "off" } },
+              "mappings": [],
+              "thresholds": { "mode": "absolute", "steps": [{ "color": "green", "value": null }] }
+            },
+            "overrides": []
+          },
+          "gridPos": { "h": 6, "w": 24, "x": 0, "y": 1 },
+          "id": 1,
+          "options": { "legend": { "calcs": [], "displayMode": "list", "placement": "bottom", "showLegend": true }, "tooltip": { "mode": "single", "sort": "none" } },
+          "targets": [
+            { "datasource": { "type": "loki", "uid": "P8E80F9AEF21F6940" }, "expr": "sum(count_over_time({namespace=~\".+\"}[1m])) by (namespace)", "legendFormat": "{{namespace}}", "refId": "A" }
+          ],
+          "title": "Log Volume by Namespace",
+          "type": "timeseries"
+        },
+        {
+          "collapsed": false,
+          "gridPos": { "h": 1, "w": 24, "x": 0, "y": 7 },
+          "id": 101,
+          "panels": [],
+          "title": "Bank of Anthos Logs",
+          "type": "row"
+        },
+        {
+          "datasource": { "type": "loki", "uid": "P8E80F9AEF21F6940" },
+          "description": "All logs from bank-of-anthos namespace",
+          "gridPos": { "h": 12, "w": 24, "x": 0, "y": 8 },
+          "id": 2,
+          "options": { "dedupStrategy": "none", "enableLogDetails": true, "prettifyLogMessage": false, "showCommonLabels": false, "showLabels": false, "showTime": true, "sortOrder": "Descending", "wrapLogMessage": false },
+          "targets": [
+            { "datasource": { "type": "loki", "uid": "P8E80F9AEF21F6940" }, "expr": "{namespace=\"bank-of-anthos\"}", "legendFormat": "", "refId": "A" }
+          ],
+          "title": "Bank of Anthos - All Logs",
+          "type": "logs"
+        },
+        {
+          "datasource": { "type": "loki", "uid": "P8E80F9AEF21F6940" },
+          "description": "Frontend application logs",
+          "gridPos": { "h": 10, "w": 12, "x": 0, "y": 20 },
+          "id": 3,
+          "options": { "dedupStrategy": "none", "enableLogDetails": true, "prettifyLogMessage": false, "showCommonLabels": false, "showLabels": false, "showTime": true, "sortOrder": "Descending", "wrapLogMessage": false },
+          "targets": [
+            { "datasource": { "type": "loki", "uid": "P8E80F9AEF21F6940" }, "expr": "{namespace=\"bank-of-anthos\", container=\"frontend\"}", "legendFormat": "", "refId": "A" }
+          ],
+          "title": "Frontend Logs",
+          "type": "logs"
+        },
+        {
+          "datasource": { "type": "loki", "uid": "P8E80F9AEF21F6940" },
+          "description": "accounts-db PostgreSQL logs",
+          "gridPos": { "h": 10, "w": 12, "x": 12, "y": 20 },
+          "id": 4,
+          "options": { "dedupStrategy": "none", "enableLogDetails": true, "prettifyLogMessage": false, "showCommonLabels": false, "showLabels": false, "showTime": true, "sortOrder": "Descending", "wrapLogMessage": false },
+          "targets": [
+            { "datasource": { "type": "loki", "uid": "P8E80F9AEF21F6940" }, "expr": "{namespace=\"bank-of-anthos\", container=\"accounts-db\"}", "legendFormat": "", "refId": "A" }
+          ],
+          "title": "Accounts-DB Logs",
+          "type": "logs"
+        },
+        {
+          "collapsed": false,
+          "gridPos": { "h": 1, "w": 24, "x": 0, "y": 30 },
+          "id": 102,
+          "panels": [],
+          "title": "Monitoring Stack Logs",
+          "type": "row"
+        },
+        {
+          "datasource": { "type": "loki", "uid": "P8E80F9AEF21F6940" },
+          "description": "Prometheus and Grafana logs",
+          "gridPos": { "h": 10, "w": 24, "x": 0, "y": 31 },
+          "id": 5,
+          "options": { "dedupStrategy": "none", "enableLogDetails": true, "prettifyLogMessage": false, "showCommonLabels": false, "showLabels": false, "showTime": true, "sortOrder": "Descending", "wrapLogMessage": false },
+          "targets": [
+            { "datasource": { "type": "loki", "uid": "P8E80F9AEF21F6940" }, "expr": "{namespace=\"monitoring\"}", "legendFormat": "", "refId": "A" }
+          ],
+          "title": "Monitoring Namespace Logs",
+          "type": "logs"
+        },
+        {
+          "collapsed": false,
+          "gridPos": { "h": 1, "w": 24, "x": 0, "y": 41 },
+          "id": 103,
+          "panels": [],
+          "title": "Error Detection",
+          "type": "row"
+        },
+        {
+          "datasource": { "type": "loki", "uid": "P8E80F9AEF21F6940" },
+          "description": "Logs containing error, Error, ERROR, fail, or exception",
+          "gridPos": { "h": 10, "w": 24, "x": 0, "y": 42 },
+          "id": 6,
+          "options": { "dedupStrategy": "none", "enableLogDetails": true, "prettifyLogMessage": false, "showCommonLabels": false, "showLabels": false, "showTime": true, "sortOrder": "Descending", "wrapLogMessage": false },
+          "targets": [
+            { "datasource": { "type": "loki", "uid": "P8E80F9AEF21F6940" }, "expr": "{namespace=~\"bank-of-anthos|monitoring\"} |~ \"(?i)(error|fail|exception)\"", "legendFormat": "", "refId": "A" }
+          ],
+          "title": "Error Logs (All Namespaces)",
+          "type": "logs"
+        }
+      ],
+      "refresh": "30s",
+      "schemaVersion": 38,
+      "style": "dark",
+      "tags": ["loki", "logs", "bank-of-anthos"],
+      "templating": {
+        "list": [
+          {
+            "current": { "selected": false, "text": "All", "value": "$__all" },
+            "datasource": { "type": "loki", "uid": "P8E80F9AEF21F6940" },
+            "definition": "label_values(namespace)",
+            "hide": 0,
+            "includeAll": true,
+            "label": "Namespace",
+            "multi": false,
+            "name": "namespace",
+            "options": [],
+            "query": "label_values(namespace)",
+            "refresh": 1,
+            "regex": "",
+            "skipUrlSync": false,
+            "sort": 1,
+            "type": "query"
+          }
+        ]
+      },
+      "time": { "from": "now-1h", "to": "now" },
+      "timepicker": {},
+      "timezone": "browser",
+      "title": "Loki Logs - Bank of Anthos",
+      "uid": "loki-logs-boa",
+      "version": 1,
+      "weekStart": ""
+    }

@@ -1,0 +1,528 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: grafana-dashboards-errors
+  namespace: monitoring
+  labels:
+    grafana_dashboard: "1"
+data:
+  errors-failures.json: |
+    {
+      "annotations": {
+        "list": [
+          {
+            "builtIn": 1,
+            "datasource": { "type": "grafana", "uid": "-- Grafana --" },
+            "enable": true,
+            "hide": true,
+            "iconColor": "rgba(0, 211, 255, 1)",
+            "name": "Annotations & Alerts",
+            "type": "dashboard"
+          }
+        ]
+      },
+      "editable": true,
+      "fiscalYearStartMonth": 0,
+      "graphTooltip": 0,
+      "id": null,
+      "links": [],
+      "liveNow": true,
+      "panels": [
+        {
+          "collapsed": false,
+          "gridPos": { "h": 1, "w": 24, "x": 0, "y": 0 },
+          "id": 100,
+          "panels": [],
+          "title": "🚨 SEVERITY 0 - CRITICAL ALERTS",
+          "type": "row"
+        },
+        {
+          "datasource": { "type": "prometheus", "uid": "PBFA97CFB590B2093" },
+          "description": "Pods currently in CrashLoopBackOff or Failed state - IMMEDIATE ACTION REQUIRED",
+          "fieldConfig": {
+            "defaults": {
+              "color": { "mode": "thresholds" },
+              "mappings": [],
+              "thresholds": { "mode": "absolute", "steps": [{ "color": "green", "value": null }, { "color": "red", "value": 1 }] }
+            },
+            "overrides": []
+          },
+          "gridPos": { "h": 4, "w": 6, "x": 0, "y": 1 },
+          "id": 1,
+          "options": { "colorMode": "background", "graphMode": "none", "justifyMode": "center", "orientation": "auto", "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false }, "textMode": "auto" },
+          "targets": [
+            { "datasource": { "type": "prometheus", "uid": "PBFA97CFB590B2093" }, "expr": "count(kube_pod_status_phase{namespace=\"bank-of-anthos\", phase=~\"Failed|Unknown\"}) or vector(0)", "legendFormat": "Failed Pods", "refId": "A" }
+          ],
+          "title": "🔴 FAILED PODS",
+          "type": "stat"
+        },
+        {
+          "datasource": { "type": "prometheus", "uid": "PBFA97CFB590B2093" },
+          "description": "Containers restarting frequently - potential crash loop",
+          "fieldConfig": {
+            "defaults": {
+              "color": { "mode": "thresholds" },
+              "mappings": [],
+              "thresholds": { "mode": "absolute", "steps": [{ "color": "green", "value": null }, { "color": "yellow", "value": 3 }, { "color": "red", "value": 5 }] }
+            },
+            "overrides": []
+          },
+          "gridPos": { "h": 4, "w": 6, "x": 6, "y": 1 },
+          "id": 2,
+          "options": { "colorMode": "background", "graphMode": "none", "justifyMode": "center", "orientation": "auto", "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false }, "textMode": "auto" },
+          "targets": [
+            { "datasource": { "type": "prometheus", "uid": "PBFA97CFB590B2093" }, "expr": "sum(increase(kube_pod_container_status_restarts_total{namespace=\"bank-of-anthos\"}[15m])) or vector(0)", "legendFormat": "Restarts (15m)", "refId": "A" }
+          ],
+          "title": "🔴 CONTAINER RESTARTS (15m)",
+          "type": "stat"
+        },
+        {
+          "datasource": { "type": "prometheus", "uid": "PBFA97CFB590B2093" },
+          "description": "Deployments with zero available replicas - SERVICE DOWN",
+          "fieldConfig": {
+            "defaults": {
+              "color": { "mode": "thresholds" },
+              "mappings": [],
+              "thresholds": { "mode": "absolute", "steps": [{ "color": "green", "value": null }, { "color": "red", "value": 1 }] }
+            },
+            "overrides": []
+          },
+          "gridPos": { "h": 4, "w": 6, "x": 12, "y": 1 },
+          "id": 3,
+          "options": { "colorMode": "background", "graphMode": "none", "justifyMode": "center", "orientation": "auto", "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false }, "textMode": "auto" },
+          "targets": [
+            { "datasource": { "type": "prometheus", "uid": "PBFA97CFB590B2093" }, "expr": "count(kube_deployment_status_replicas_available{namespace=\"bank-of-anthos\"} == 0) or vector(0)", "legendFormat": "Unavailable", "refId": "A" }
+          ],
+          "title": "🔴 SERVICES DOWN",
+          "type": "stat"
+        },
+        {
+          "datasource": { "type": "prometheus", "uid": "PBFA97CFB590B2093" },
+          "description": "Nodes not in Ready state - INFRASTRUCTURE CRITICAL",
+          "fieldConfig": {
+            "defaults": {
+              "color": { "mode": "thresholds" },
+              "mappings": [],
+              "thresholds": { "mode": "absolute", "steps": [{ "color": "green", "value": null }, { "color": "red", "value": 1 }] }
+            },
+            "overrides": []
+          },
+          "gridPos": { "h": 4, "w": 6, "x": 18, "y": 1 },
+          "id": 4,
+          "options": { "colorMode": "background", "graphMode": "none", "justifyMode": "center", "orientation": "auto", "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false }, "textMode": "auto" },
+          "targets": [
+            { "datasource": { "type": "prometheus", "uid": "PBFA97CFB590B2093" }, "expr": "count(kube_node_status_condition{condition=\"Ready\", status=\"false\"}) or vector(0)", "legendFormat": "Not Ready", "refId": "A" }
+          ],
+          "title": "🔴 NODES NOT READY",
+          "type": "stat"
+        },
+        {
+          "collapsed": false,
+          "gridPos": { "h": 1, "w": 24, "x": 0, "y": 5 },
+          "id": 101,
+          "panels": [],
+          "title": "⚠️ SEVERITY 1 - HIGH PRIORITY ALERTS",
+          "type": "row"
+        },
+        {
+          "datasource": { "type": "prometheus", "uid": "PBFA97CFB590B2093" },
+          "description": "Pods waiting to be scheduled",
+          "fieldConfig": {
+            "defaults": {
+              "color": { "mode": "thresholds" },
+              "mappings": [],
+              "thresholds": { "mode": "absolute", "steps": [{ "color": "green", "value": null }, { "color": "yellow", "value": 1 }, { "color": "red", "value": 3 }] }
+            },
+            "overrides": []
+          },
+          "gridPos": { "h": 4, "w": 4, "x": 0, "y": 6 },
+          "id": 5,
+          "options": { "colorMode": "background", "graphMode": "none", "justifyMode": "center", "orientation": "auto", "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false }, "textMode": "auto" },
+          "targets": [
+            { "datasource": { "type": "prometheus", "uid": "PBFA97CFB590B2093" }, "expr": "count(kube_pod_status_phase{namespace=\"bank-of-anthos\", phase=\"Pending\"}) or vector(0)", "legendFormat": "Pending", "refId": "A" }
+          ],
+          "title": "⚠️ PENDING PODS",
+          "type": "stat"
+        },
+        {
+          "datasource": { "type": "prometheus", "uid": "PBFA97CFB590B2093" },
+          "description": "Containers terminated due to OOM",
+          "fieldConfig": {
+            "defaults": {
+              "color": { "mode": "thresholds" },
+              "mappings": [],
+              "thresholds": { "mode": "absolute", "steps": [{ "color": "green", "value": null }, { "color": "yellow", "value": 1 }, { "color": "red", "value": 3 }] }
+            },
+            "overrides": []
+          },
+          "gridPos": { "h": 4, "w": 4, "x": 4, "y": 6 },
+          "id": 6,
+          "options": { "colorMode": "background", "graphMode": "none", "justifyMode": "center", "orientation": "auto", "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false }, "textMode": "auto" },
+          "targets": [
+            { "datasource": { "type": "prometheus", "uid": "PBFA97CFB590B2093" }, "expr": "count(kube_pod_container_status_last_terminated_reason{namespace=\"bank-of-anthos\", reason=\"OOMKilled\"}) or vector(0)", "legendFormat": "OOMKilled", "refId": "A" }
+          ],
+          "title": "⚠️ OOM KILLED",
+          "type": "stat"
+        },
+        {
+          "datasource": { "type": "prometheus", "uid": "PBFA97CFB590B2093" },
+          "description": "Containers waiting to start",
+          "fieldConfig": {
+            "defaults": {
+              "color": { "mode": "thresholds" },
+              "mappings": [],
+              "thresholds": { "mode": "absolute", "steps": [{ "color": "green", "value": null }, { "color": "yellow", "value": 1 }, { "color": "red", "value": 3 }] }
+            },
+            "overrides": []
+          },
+          "gridPos": { "h": 4, "w": 4, "x": 8, "y": 6 },
+          "id": 7,
+          "options": { "colorMode": "background", "graphMode": "none", "justifyMode": "center", "orientation": "auto", "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false }, "textMode": "auto" },
+          "targets": [
+            { "datasource": { "type": "prometheus", "uid": "PBFA97CFB590B2093" }, "expr": "count(kube_pod_container_status_waiting{namespace=\"bank-of-anthos\"}) or vector(0)", "legendFormat": "Waiting", "refId": "A" }
+          ],
+          "title": "⚠️ CONTAINERS WAITING",
+          "type": "stat"
+        },
+        {
+          "datasource": { "type": "prometheus", "uid": "PBFA97CFB590B2093" },
+          "description": "Nodes with memory pressure",
+          "fieldConfig": {
+            "defaults": {
+              "color": { "mode": "thresholds" },
+              "mappings": [],
+              "thresholds": { "mode": "absolute", "steps": [{ "color": "green", "value": null }, { "color": "red", "value": 1 }] }
+            },
+            "overrides": []
+          },
+          "gridPos": { "h": 4, "w": 4, "x": 12, "y": 6 },
+          "id": 8,
+          "options": { "colorMode": "background", "graphMode": "none", "justifyMode": "center", "orientation": "auto", "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false }, "textMode": "auto" },
+          "targets": [
+            { "datasource": { "type": "prometheus", "uid": "PBFA97CFB590B2093" }, "expr": "count(kube_node_status_condition{condition=\"MemoryPressure\", status=\"true\"}) or vector(0)", "legendFormat": "Memory Pressure", "refId": "A" }
+          ],
+          "title": "⚠️ NODE MEMORY PRESSURE",
+          "type": "stat"
+        },
+        {
+          "datasource": { "type": "prometheus", "uid": "PBFA97CFB590B2093" },
+          "description": "Nodes with disk pressure",
+          "fieldConfig": {
+            "defaults": {
+              "color": { "mode": "thresholds" },
+              "mappings": [],
+              "thresholds": { "mode": "absolute", "steps": [{ "color": "green", "value": null }, { "color": "red", "value": 1 }] }
+            },
+            "overrides": []
+          },
+          "gridPos": { "h": 4, "w": 4, "x": 16, "y": 6 },
+          "id": 9,
+          "options": { "colorMode": "background", "graphMode": "none", "justifyMode": "center", "orientation": "auto", "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false }, "textMode": "auto" },
+          "targets": [
+            { "datasource": { "type": "prometheus", "uid": "PBFA97CFB590B2093" }, "expr": "count(kube_node_status_condition{condition=\"DiskPressure\", status=\"true\"}) or vector(0)", "legendFormat": "Disk Pressure", "refId": "A" }
+          ],
+          "title": "⚠️ NODE DISK PRESSURE",
+          "type": "stat"
+        },
+        {
+          "datasource": { "type": "prometheus", "uid": "PBFA97CFB590B2093" },
+          "description": "Nodes with PID pressure",
+          "fieldConfig": {
+            "defaults": {
+              "color": { "mode": "thresholds" },
+              "mappings": [],
+              "thresholds": { "mode": "absolute", "steps": [{ "color": "green", "value": null }, { "color": "red", "value": 1 }] }
+            },
+            "overrides": []
+          },
+          "gridPos": { "h": 4, "w": 4, "x": 20, "y": 6 },
+          "id": 10,
+          "options": { "colorMode": "background", "graphMode": "none", "justifyMode": "center", "orientation": "auto", "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false }, "textMode": "auto" },
+          "targets": [
+            { "datasource": { "type": "prometheus", "uid": "PBFA97CFB590B2093" }, "expr": "count(kube_node_status_condition{condition=\"PIDPressure\", status=\"true\"}) or vector(0)", "legendFormat": "PID Pressure", "refId": "A" }
+          ],
+          "title": "⚠️ NODE PID PRESSURE",
+          "type": "stat"
+        },
+        {
+          "collapsed": false,
+          "gridPos": { "h": 1, "w": 24, "x": 0, "y": 10 },
+          "id": 102,
+          "panels": [],
+          "title": "📊 APPLICATION ERROR DETAILS",
+          "type": "row"
+        },
+        {
+          "datasource": { "type": "prometheus", "uid": "PBFA97CFB590B2093" },
+          "description": "Pods with issues - not running or restarting",
+          "fieldConfig": {
+            "defaults": {
+              "color": { "mode": "thresholds" },
+              "custom": { "align": "auto", "cellOptions": { "type": "color-text" }, "inspect": false },
+              "mappings": [],
+              "thresholds": { "mode": "absolute", "steps": [{ "color": "green", "value": null }, { "color": "yellow", "value": 1 }, { "color": "red", "value": 3 }] }
+            },
+            "overrides": [
+              { "matcher": { "id": "byName", "options": "Pod" }, "properties": [{ "id": "custom.width", "value": 250 }] },
+              { "matcher": { "id": "byName", "options": "Restarts" }, "properties": [{ "id": "custom.cellOptions", "value": { "mode": "gradient", "type": "gauge" } }] }
+            ]
+          },
+          "gridPos": { "h": 8, "w": 12, "x": 0, "y": 11 },
+          "id": 11,
+          "options": { "cellHeight": "sm", "footer": { "countRows": false, "fields": "", "reducer": ["sum"], "show": false }, "showHeader": true },
+          "targets": [
+            { "datasource": { "type": "prometheus", "uid": "PBFA97CFB590B2093" }, "expr": "sort_desc(kube_pod_container_status_restarts_total{namespace=\"bank-of-anthos\"} > 0)", "format": "table", "instant": true, "legendFormat": "", "refId": "A" }
+          ],
+          "title": "Pod Restart Count",
+          "transformations": [
+            { "id": "organize", "options": { "excludeByName": { "Time": true, "uid": true, "job": true, "instance": true, "endpoint": true, "service": true }, "indexByName": {}, "renameByName": { "container": "Container", "namespace": "Namespace", "pod": "Pod", "Value": "Restarts" } } }
+          ],
+          "type": "table"
+        },
+        {
+          "datasource": { "type": "prometheus", "uid": "PBFA97CFB590B2093" },
+          "description": "Deployment replica status - desired vs available",
+          "fieldConfig": {
+            "defaults": {
+              "color": { "mode": "thresholds" },
+              "custom": { "align": "auto", "cellOptions": { "type": "auto" }, "inspect": false },
+              "mappings": [],
+              "thresholds": { "mode": "absolute", "steps": [{ "color": "green", "value": null }] }
+            },
+            "overrides": [
+              { "matcher": { "id": "byName", "options": "Status" }, "properties": [{ "id": "custom.cellOptions", "value": { "type": "color-text" } }, { "id": "mappings", "value": [{ "options": { "DEGRADED": { "color": "red", "index": 1 }, "HEALTHY": { "color": "green", "index": 0 } }, "type": "value" }] }] }
+            ]
+          },
+          "gridPos": { "h": 8, "w": 12, "x": 12, "y": 11 },
+          "id": 12,
+          "options": { "cellHeight": "sm", "footer": { "countRows": false, "fields": "", "reducer": ["sum"], "show": false }, "showHeader": true },
+          "targets": [
+            { "datasource": { "type": "prometheus", "uid": "PBFA97CFB590B2093" }, "expr": "kube_deployment_status_replicas{namespace=\"bank-of-anthos\"}", "format": "table", "instant": true, "legendFormat": "", "refId": "A" },
+            { "datasource": { "type": "prometheus", "uid": "PBFA97CFB590B2093" }, "expr": "kube_deployment_status_replicas_available{namespace=\"bank-of-anthos\"}", "format": "table", "instant": true, "legendFormat": "", "refId": "B" }
+          ],
+          "title": "Deployment Health Status",
+          "transformations": [
+            { "id": "seriesToColumns", "options": { "byField": "deployment" } },
+            { "id": "organize", "options": { "excludeByName": { "Time 1": true, "Time 2": true, "uid 1": true, "uid 2": true, "job 1": true, "job 2": true, "instance 1": true, "instance 2": true, "endpoint 1": true, "endpoint 2": true, "service 1": true, "service 2": true, "namespace 1": true, "namespace 2": true }, "indexByName": {}, "renameByName": { "deployment": "Deployment", "Value #A": "Desired", "Value #B": "Available" } } },
+            { "id": "calculateField", "options": { "alias": "Status", "binary": { "left": "Available", "operator": ">=", "reducer": "sum", "right": "Desired" }, "mode": "binary", "reduce": { "reducer": "sum" }, "replaceFields": false } },
+            { "id": "organize", "options": { "excludeByName": {}, "indexByName": {}, "renameByName": {} } }
+          ],
+          "type": "table"
+        },
+        {
+          "datasource": { "type": "prometheus", "uid": "PBFA97CFB590B2093" },
+          "description": "Container restarts over time",
+          "fieldConfig": {
+            "defaults": {
+              "color": { "mode": "palette-classic" },
+              "custom": { "axisCenteredZero": false, "axisColorMode": "text", "axisLabel": "", "axisPlacement": "auto", "barAlignment": 0, "drawStyle": "line", "fillOpacity": 10, "gradientMode": "none", "hideFrom": { "legend": false, "tooltip": false, "viz": false }, "lineInterpolation": "linear", "lineWidth": 1, "pointSize": 5, "scaleDistribution": { "type": "linear" }, "showPoints": "never", "spanNulls": false, "stacking": { "group": "A", "mode": "none" }, "thresholdsStyle": { "mode": "line" } },
+              "mappings": [],
+              "thresholds": { "mode": "absolute", "steps": [{ "color": "green", "value": null }, { "color": "red", "value": 5 }] }
+            },
+            "overrides": []
+          },
+          "gridPos": { "h": 8, "w": 24, "x": 0, "y": 19 },
+          "id": 13,
+          "options": { "legend": { "calcs": ["sum"], "displayMode": "table", "placement": "right", "showLegend": true }, "tooltip": { "mode": "multi", "sort": "desc" } },
+          "targets": [
+            { "datasource": { "type": "prometheus", "uid": "PBFA97CFB590B2093" }, "expr": "increase(kube_pod_container_status_restarts_total{namespace=\"bank-of-anthos\"}[5m])", "legendFormat": "{{pod}}/{{container}}", "refId": "A" }
+          ],
+          "title": "Container Restart Timeline",
+          "type": "timeseries"
+        },
+        {
+          "collapsed": false,
+          "gridPos": { "h": 1, "w": 24, "x": 0, "y": 27 },
+          "id": 103,
+          "panels": [],
+          "title": "🖥️ INFRASTRUCTURE ERROR DETAILS",
+          "type": "row"
+        },
+        {
+          "datasource": { "type": "prometheus", "uid": "PBFA97CFB590B2093" },
+          "description": "Current node conditions",
+          "fieldConfig": {
+            "defaults": {
+              "color": { "mode": "thresholds" },
+              "custom": { "align": "auto", "cellOptions": { "type": "color-text" }, "inspect": false },
+              "mappings": [{ "options": { "0": { "color": "green", "index": 1, "text": "OK" }, "1": { "color": "red", "index": 0, "text": "ISSUE" } }, "type": "value" }],
+              "thresholds": { "mode": "absolute", "steps": [{ "color": "green", "value": null }, { "color": "red", "value": 1 }] }
+            },
+            "overrides": []
+          },
+          "gridPos": { "h": 6, "w": 12, "x": 0, "y": 28 },
+          "id": 14,
+          "options": { "cellHeight": "sm", "footer": { "countRows": false, "fields": "", "reducer": ["sum"], "show": false }, "showHeader": true },
+          "targets": [
+            { "datasource": { "type": "prometheus", "uid": "PBFA97CFB590B2093" }, "expr": "kube_node_status_condition{condition=~\"MemoryPressure|DiskPressure|PIDPressure|NetworkUnavailable\", status=\"true\"}", "format": "table", "instant": true, "legendFormat": "", "refId": "A" }
+          ],
+          "title": "Node Condition Issues",
+          "transformations": [
+            { "id": "organize", "options": { "excludeByName": { "Time": true, "uid": true, "job": true, "instance": true, "endpoint": true, "service": true, "status": true }, "indexByName": {}, "renameByName": { "condition": "Condition", "node": "Node", "Value": "Status" } } }
+          ],
+          "type": "table"
+        },
+        {
+          "datasource": { "type": "prometheus", "uid": "PBFA97CFB590B2093" },
+          "description": "Node readiness status",
+          "fieldConfig": {
+            "defaults": {
+              "color": { "mode": "thresholds" },
+              "custom": { "align": "auto", "cellOptions": { "type": "color-text" }, "inspect": false },
+              "mappings": [{ "options": { "0": { "color": "red", "index": 1, "text": "NOT READY" }, "1": { "color": "green", "index": 0, "text": "READY" } }, "type": "value" }],
+              "thresholds": { "mode": "absolute", "steps": [{ "color": "red", "value": null }, { "color": "green", "value": 1 }] }
+            },
+            "overrides": []
+          },
+          "gridPos": { "h": 6, "w": 12, "x": 12, "y": 28 },
+          "id": 15,
+          "options": { "cellHeight": "sm", "footer": { "countRows": false, "fields": "", "reducer": ["sum"], "show": false }, "showHeader": true },
+          "targets": [
+            { "datasource": { "type": "prometheus", "uid": "PBFA97CFB590B2093" }, "expr": "kube_node_status_condition{condition=\"Ready\", status=\"true\"}", "format": "table", "instant": true, "legendFormat": "", "refId": "A" }
+          ],
+          "title": "Node Readiness",
+          "transformations": [
+            { "id": "organize", "options": { "excludeByName": { "Time": true, "uid": true, "job": true, "instance": true, "endpoint": true, "service": true, "status": true, "condition": true }, "indexByName": {}, "renameByName": { "node": "Node", "Value": "Status" } } }
+          ],
+          "type": "table"
+        },
+        {
+          "collapsed": false,
+          "gridPos": { "h": 1, "w": 24, "x": 0, "y": 34 },
+          "id": 104,
+          "panels": [],
+          "title": "📝 APPLICATION ERROR LOGS (Loki)",
+          "type": "row"
+        },
+        {
+          "datasource": { "type": "loki", "uid": "P8E80F9AEF21F6940" },
+          "description": "CRITICAL: Error, Exception, Fatal, Panic logs",
+          "gridPos": { "h": 10, "w": 24, "x": 0, "y": 35 },
+          "id": 16,
+          "options": { "dedupStrategy": "none", "enableLogDetails": true, "prettifyLogMessage": false, "showCommonLabels": false, "showLabels": true, "showTime": true, "sortOrder": "Descending", "wrapLogMessage": true },
+          "targets": [
+            { "datasource": { "type": "loki", "uid": "P8E80F9AEF21F6940" }, "expr": "{namespace=\"bank-of-anthos\"} |~ \"(?i)(error|exception|fatal|panic|fail|critical)\"", "legendFormat": "", "refId": "A" }
+          ],
+          "title": "🔴 CRITICAL Application Error Logs",
+          "type": "logs"
+        },
+        {
+          "datasource": { "type": "loki", "uid": "P8E80F9AEF21F6940" },
+          "description": "Database connection errors",
+          "gridPos": { "h": 8, "w": 12, "x": 0, "y": 45 },
+          "id": 17,
+          "options": { "dedupStrategy": "none", "enableLogDetails": true, "prettifyLogMessage": false, "showCommonLabels": false, "showLabels": true, "showTime": true, "sortOrder": "Descending", "wrapLogMessage": true },
+          "targets": [
+            { "datasource": { "type": "loki", "uid": "P8E80F9AEF21F6940" }, "expr": "{namespace=\"bank-of-anthos\"} |~ \"(?i)(connection refused|connection reset|timeout|database|postgres|sql)\" |~ \"(?i)(error|fail|refused|timeout)\"", "legendFormat": "", "refId": "A" }
+          ],
+          "title": "🔴 Database Connection Errors",
+          "type": "logs"
+        },
+        {
+          "datasource": { "type": "loki", "uid": "P8E80F9AEF21F6940" },
+          "description": "HTTP 5xx errors and connection issues",
+          "gridPos": { "h": 8, "w": 12, "x": 12, "y": 45 },
+          "id": 18,
+          "options": { "dedupStrategy": "none", "enableLogDetails": true, "prettifyLogMessage": false, "showCommonLabels": false, "showLabels": true, "showTime": true, "sortOrder": "Descending", "wrapLogMessage": true },
+          "targets": [
+            { "datasource": { "type": "loki", "uid": "P8E80F9AEF21F6940" }, "expr": "{namespace=\"bank-of-anthos\"} |~ \"(?i)(5[0-9]{2}|502|503|504|connection refused|unreachable)\"", "legendFormat": "", "refId": "A" }
+          ],
+          "title": "🔴 HTTP 5xx & Connection Errors",
+          "type": "logs"
+        },
+        {
+          "collapsed": false,
+          "gridPos": { "h": 1, "w": 24, "x": 0, "y": 53 },
+          "id": 105,
+          "panels": [],
+          "title": "📝 INFRASTRUCTURE ERROR LOGS (Loki)",
+          "type": "row"
+        },
+        {
+          "datasource": { "type": "loki", "uid": "P8E80F9AEF21F6940" },
+          "description": "Kubernetes system errors from kube-system namespace",
+          "gridPos": { "h": 8, "w": 24, "x": 0, "y": 54 },
+          "id": 19,
+          "options": { "dedupStrategy": "none", "enableLogDetails": true, "prettifyLogMessage": false, "showCommonLabels": false, "showLabels": true, "showTime": true, "sortOrder": "Descending", "wrapLogMessage": true },
+          "targets": [
+            { "datasource": { "type": "loki", "uid": "P8E80F9AEF21F6940" }, "expr": "{namespace=\"kube-system\"} |~ \"(?i)(error|fail|crash|oom|evict|kill|unhealthy)\"", "legendFormat": "", "refId": "A" }
+          ],
+          "title": "🔴 Kubernetes System Errors",
+          "type": "logs"
+        },
+        {
+          "datasource": { "type": "loki", "uid": "P8E80F9AEF21F6940" },
+          "description": "Monitoring stack errors",
+          "gridPos": { "h": 8, "w": 24, "x": 0, "y": 62 },
+          "id": 20,
+          "options": { "dedupStrategy": "none", "enableLogDetails": true, "prettifyLogMessage": false, "showCommonLabels": false, "showLabels": true, "showTime": true, "sortOrder": "Descending", "wrapLogMessage": true },
+          "targets": [
+            { "datasource": { "type": "loki", "uid": "P8E80F9AEF21F6940" }, "expr": "{namespace=\"monitoring\"} |~ \"(?i)(error|fail|refused|timeout|unreachable)\"", "legendFormat": "", "refId": "A" }
+          ],
+          "title": "🔴 Monitoring Stack Errors",
+          "type": "logs"
+        },
+        {
+          "collapsed": false,
+          "gridPos": { "h": 1, "w": 24, "x": 0, "y": 70 },
+          "id": 106,
+          "panels": [],
+          "title": "📈 ERROR RATE TRENDS",
+          "type": "row"
+        },
+        {
+          "datasource": { "type": "loki", "uid": "P8E80F9AEF21F6940" },
+          "description": "Error log volume over time by namespace",
+          "fieldConfig": {
+            "defaults": {
+              "color": { "mode": "palette-classic" },
+              "custom": { "axisCenteredZero": false, "axisColorMode": "text", "axisLabel": "Errors/min", "axisPlacement": "auto", "barAlignment": 0, "drawStyle": "bars", "fillOpacity": 50, "gradientMode": "none", "hideFrom": { "legend": false, "tooltip": false, "viz": false }, "lineInterpolation": "linear", "lineWidth": 1, "pointSize": 5, "scaleDistribution": { "type": "linear" }, "showPoints": "never", "spanNulls": false, "stacking": { "group": "A", "mode": "normal" }, "thresholdsStyle": { "mode": "line" } },
+              "mappings": [],
+              "thresholds": { "mode": "absolute", "steps": [{ "color": "green", "value": null }, { "color": "yellow", "value": 10 }, { "color": "red", "value": 50 }] }
+            },
+            "overrides": []
+          },
+          "gridPos": { "h": 8, "w": 12, "x": 0, "y": 71 },
+          "id": 21,
+          "options": { "legend": { "calcs": ["sum", "mean"], "displayMode": "table", "placement": "right", "showLegend": true }, "tooltip": { "mode": "multi", "sort": "desc" } },
+          "targets": [
+            { "datasource": { "type": "loki", "uid": "P8E80F9AEF21F6940" }, "expr": "sum(count_over_time({namespace=~\"bank-of-anthos|monitoring|kube-system\"} |~ \"(?i)(error|exception|fail)\" [1m])) by (namespace)", "legendFormat": "{{namespace}}", "refId": "A" }
+          ],
+          "title": "Error Log Volume by Namespace",
+          "type": "timeseries"
+        },
+        {
+          "datasource": { "type": "loki", "uid": "P8E80F9AEF21F6940" },
+          "description": "Error log volume by container",
+          "fieldConfig": {
+            "defaults": {
+              "color": { "mode": "palette-classic" },
+              "custom": { "axisCenteredZero": false, "axisColorMode": "text", "axisLabel": "Errors/min", "axisPlacement": "auto", "barAlignment": 0, "drawStyle": "bars", "fillOpacity": 50, "gradientMode": "none", "hideFrom": { "legend": false, "tooltip": false, "viz": false }, "lineInterpolation": "linear", "lineWidth": 1, "pointSize": 5, "scaleDistribution": { "type": "linear" }, "showPoints": "never", "spanNulls": false, "stacking": { "group": "A", "mode": "normal" }, "thresholdsStyle": { "mode": "line" } },
+              "mappings": [],
+              "thresholds": { "mode": "absolute", "steps": [{ "color": "green", "value": null }, { "color": "yellow", "value": 5 }, { "color": "red", "value": 20 }] }
+            },
+            "overrides": []
+          },
+          "gridPos": { "h": 8, "w": 12, "x": 12, "y": 71 },
+          "id": 22,
+          "options": { "legend": { "calcs": ["sum", "mean"], "displayMode": "table", "placement": "right", "showLegend": true }, "tooltip": { "mode": "multi", "sort": "desc" } },
+          "targets": [
+            { "datasource": { "type": "loki", "uid": "P8E80F9AEF21F6940" }, "expr": "sum(count_over_time({namespace=\"bank-of-anthos\"} |~ \"(?i)(error|exception|fail)\" [1m])) by (container)", "legendFormat": "{{container}}", "refId": "A" }
+          ],
+          "title": "Error Log Volume by Container",
+          "type": "timeseries"
+        }
+      ],
+      "refresh": "10s",
+      "schemaVersion": 38,
+      "style": "dark",
+      "tags": ["errors", "failures", "severity-0", "severity-1", "critical"],
+      "templating": { "list": [] },
+      "time": { "from": "now-1h", "to": "now" },
+      "timepicker": {},
+      "timezone": "browser",
+      "title": "Critical Errors & Failures Dashboard",
+      "uid": "errors-failures",
+      "version": 1,
+      "weekStart": ""
+    }

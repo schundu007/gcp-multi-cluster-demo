@@ -1,0 +1,94 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: contacts
+  namespace: bank-of-anthos
+  labels:
+    app: contacts
+    tier: backend
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: contacts
+  template:
+    metadata:
+      labels:
+        app: contacts
+        tier: backend
+    spec:
+      terminationGracePeriodSeconds: 5
+      containers:
+        - name: contacts
+          image: us-central1-docker.pkg.dev/bank-of-anthos-ci/bank-of-anthos/contacts:v0.6.8
+          ports:
+            - name: http
+              containerPort: 8085
+          env:
+            - name: VERSION
+              value: "v0.6.5"
+            - name: PORT
+              value: "8085"
+            - name: ENABLE_TRACING
+              value: "false"
+            # Cross-cluster database connection (accounts-db in C1)
+            - name: ACCOUNTS_DB_URI
+              valueFrom:
+                configMapKeyRef:
+                  name: service-api-config
+                  key: ACCOUNTS_DB_URI
+          envFrom:
+            - configMapRef:
+                name: environment-config
+          readinessProbe:
+            httpGet:
+              path: /ready
+              port: 8085
+            initialDelaySeconds: 10
+            periodSeconds: 5
+            timeoutSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /ready
+              port: 8085
+            initialDelaySeconds: 60
+            periodSeconds: 15
+            timeoutSeconds: 30
+          resources:
+            requests:
+              cpu: 100m
+              memory: 64Mi
+            limits:
+              cpu: 500m
+              memory: 128Mi
+          volumeMounts:
+            - name: publickey
+              mountPath: /tmp/.ssh
+              readOnly: true
+      volumes:
+        - name: publickey
+          secret:
+            secretName: jwt-key
+            items:
+              - key: jwtRS256.key.pub
+                path: publickey
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: contacts
+  namespace: bank-of-anthos
+  labels:
+    app: contacts
+  annotations:
+    networking.gke.io/load-balancer-type: "Internal"
+    networking.gke.io/internal-load-balancer-allow-global-access: "true"
+spec:
+  type: LoadBalancer
+  loadBalancerIP: "10.1.10.11"
+  selector:
+    app: contacts
+  ports:
+    - name: http
+      port: 8085
+      targetPort: 8085

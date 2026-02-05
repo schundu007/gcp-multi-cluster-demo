@@ -1,0 +1,55 @@
+# Terraform
+terraform/.terraform/
+terraform/*.tfstate
+terraform/*.tfstate.*
+terraform/*.tfvars
+terraform/.terraform.lock.hcl
+terraform/crash.log
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+venv/
+.venv/
+*.egg-info/
+dist/
+build/
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+logs/
+
+# Credentials (NEVER commit these)
+*.pem
+*.key
+*credentials*.json
+*service-account*.json
+.env
+.env.*
+
+# Kubernetes
+kubeconfig
+*.kubeconfig
+
+# Demo UI
+demo-ui/.streamlit/secrets.toml
+
+# Temporary files
+*.tmp
+*.temp
+.cache/

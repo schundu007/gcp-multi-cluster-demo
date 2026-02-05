@@ -1,0 +1,102 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: balancereader
+  namespace: bank-of-anthos
+  labels:
+    app: balancereader
+    tier: backend
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: balancereader
+  template:
+    metadata:
+      labels:
+        app: balancereader
+        tier: backend
+    spec:
+      terminationGracePeriodSeconds: 5
+      containers:
+        - name: balancereader
+          image: us-central1-docker.pkg.dev/bank-of-anthos-ci/bank-of-anthos/balancereader:v0.6.8
+          ports:
+            - name: http
+              containerPort: 8085
+          env:
+            - name: VERSION
+              value: "v0.6.5"
+            - name: PORT
+              value: "8085"
+            - name: ENABLE_TRACING
+              value: "false"
+            - name: ENABLE_METRICS
+              value: "true"
+            - name: POLL_MS
+              value: "100"
+            - name: CACHE_SIZE
+              value: "1000000"
+            # Local ledger-db connection (same cluster)
+            - name: SPRING_DATASOURCE_URL
+              value: "jdbc:postgresql://ledger-db:5432/postgresdb"
+            - name: SPRING_DATASOURCE_USERNAME
+              value: "admin"
+            - name: SPRING_DATASOURCE_PASSWORD
+              value: "admin"
+            - name: JVM_OPTS
+              value: "-XX:+UnlockExperimentalVMOptions -XX:+UseCGroupMemoryLimitForHeap -Xms256m -Xmx512m"
+          envFrom:
+            - configMapRef:
+                name: environment-config
+          readinessProbe:
+            httpGet:
+              path: /ready
+              port: 8085
+            initialDelaySeconds: 60
+            periodSeconds: 5
+            timeoutSeconds: 10
+          startupProbe:
+            httpGet:
+              path: /ready
+              port: 8085
+            periodSeconds: 10
+            failureThreshold: 30
+          resources:
+            requests:
+              cpu: 100m
+              memory: 256Mi
+            limits:
+              cpu: 500m
+              memory: 512Mi
+          volumeMounts:
+            - name: publickey
+              mountPath: /tmp/.ssh
+              readOnly: true
+      volumes:
+        - name: publickey
+          secret:
+            secretName: jwt-key
+            items:
+              - key: jwtRS256.key.pub
+                path: publickey
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: balancereader
+  namespace: bank-of-anthos
+  labels:
+    app: balancereader
+  annotations:
+    networking.gke.io/load-balancer-type: "Internal"
+    networking.gke.io/internal-load-balancer-allow-global-access: "true"
+spec:
+  type: LoadBalancer
+  loadBalancerIP: "10.1.10.12"
+  selector:
+    app: balancereader
+  ports:
+    - name: http
+      port: 8085
+      targetPort: 8085

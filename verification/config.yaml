@@ -1,0 +1,85 @@
+# Configuration for the verification tool
+
+clusters:
+  c1:
+    context: gke-c1
+    namespace: bank-of-anthos
+    region: us-central1
+    vpc_cidr: "10.0.0.0/16"
+    role: frontend
+
+  c2:
+    context: gke-c2
+    namespace: bank-of-anthos
+    region: us-east1
+    vpc_cidr: "10.1.0.0/16"
+    role: backend
+
+ilb_endpoints:
+  c2_backends:
+    userservice: "10.1.10.10:8085"
+    contacts: "10.1.10.11:8085"
+    balancereader: "10.1.10.12:8085"
+    transactionhistory: "10.1.10.13:8085"
+    ledgerwriter: "10.1.10.14:8085"
+
+  c1_database:
+    accounts_db: "10.0.10.50:5432"
+
+firewall_rules:
+  - name: allow-c1-to-c2-app
+    network: vpc-c1
+    direction: EGRESS
+    critical: true
+
+  - name: allow-c1-to-c2-app-ingress
+    network: vpc-c2
+    direction: INGRESS
+    critical: true
+
+  - name: allow-c2-to-c1-db
+    network: vpc-c1
+    direction: INGRESS
+    critical: true
+
+  - name: allow-c2-to-c1-db-egress
+    network: vpc-c2
+    direction: EGRESS
+    critical: true
+
+connectivity_tests:
+  - name: "frontend -> userservice"
+    source_cluster: c1
+    target_ip: "10.1.10.10"
+    target_port: 8085
+    expected: success
+
+  - name: "frontend -> contacts"
+    source_cluster: c1
+    target_ip: "10.1.10.11"
+    target_port: 8085
+    expected: success
+
+  - name: "frontend -> balancereader"
+    source_cluster: c1
+    target_ip: "10.1.10.12"
+    target_port: 8085
+    expected: success
+
+  - name: "frontend -> transactionhistory"
+    source_cluster: c1
+    target_ip: "10.1.10.13"
+    target_port: 8085
+    expected: success
+
+  - name: "frontend -> ledgerwriter"
+    source_cluster: c1
+    target_ip: "10.1.10.14"
+    target_port: 8085
+    expected: success
+
+  - name: "userservice -> accounts-db"
+    source_cluster: c2
+    target_ip: "10.0.10.50"
+    target_port: 5432
+    expected: success

@@ -1,0 +1,169 @@
+apiVersion: v1
+kind: Secret
+metadata:
+  name: ledger-db-secret
+  namespace: bank-of-anthos
+type: Opaque
+stringData:
+  POSTGRES_USER: "admin"
+  POSTGRES_PASSWORD: "admin"
+  POSTGRES_DB: "postgresdb"
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: ledger-db-config
+  namespace: bank-of-anthos
+data:
+  POSTGRES_DB: "postgresdb"
+  POSTGRES_USER: "admin"
+  USE_DEMO_DATA: "True"
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: ledger-db-init
+  namespace: bank-of-anthos
+data:
+  0-ledger-schema.sql: |
+    CREATE TABLE IF NOT EXISTS transactions (
+      transaction_id UUID PRIMARY KEY,
+      from_acct VARCHAR(20) NOT NULL,
+      to_acct VARCHAR(20) NOT NULL,
+      from_route VARCHAR(9) NOT NULL,
+      to_route VARCHAR(9) NOT NULL,
+      amount INTEGER NOT NULL,
+      timestamp TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+    );
+
+    CREATE INDEX IF NOT EXISTS idx_transactions_from_acct ON transactions(from_acct);
+    CREATE INDEX IF NOT EXISTS idx_transactions_to_acct ON transactions(to_acct);
+    CREATE INDEX IF NOT EXISTS idx_transactions_timestamp ON transactions(timestamp);
+
+  1-load-testdata.sh: |
+    #!/bin/bash
+    set -e
+
+    TESTDATA_FILE="/docker-entrypoint-initdb.d/testdata.sql"
+    if [ -f "$TESTDATA_FILE" ]; then
+      echo "Loading test data..."
+      psql -v ON_ERROR_STOP=1 --username "$POSTGRES_USER" --dbname "$POSTGRES_DB" < "$TESTDATA_FILE"
+    fi
+
+  testdata.sql: |
+    -- Demo transactions
+    INSERT INTO transactions (transaction_id, from_acct, to_acct, from_route, to_route, amount, timestamp)
+    VALUES
+      ('a1b2c3d4-e5f6-7890-abcd-ef1234567890', '1011226111', '1033623433', '883745000', '883745000', 10000, '2024-01-15 10:30:00'),
+      ('b2c3d4e5-f6a7-8901-bcde-f12345678901', '1033623433', '1055757655', '883745000', '883745000', 5000, '2024-01-15 11:45:00'),
+      ('c3d4e5f6-a7b8-9012-cdef-123456789012', '1055757655', '1011226111', '883745000', '883745000', 2500, '2024-01-15 14:20:00'),
+      ('d4e5f6a7-b8c9-0123-def0-234567890123', '1011226111', '1055757655', '883745000', '883745000', 7500, '2024-01-16 09:15:00'),
+      ('e5f6a7b8-c9d0-1234-ef01-345678901234', '1033623433', '1011226111', '883745000', '883745000', 3000, '2024-01-16 16:00:00')
+    ON CONFLICT (transaction_id) DO NOTHING;
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: ledger-db
+  namespace: bank-of-anthos
+  labels:
+    app: ledger-db
+spec:
+  serviceName: ledger-db-headless
+  replicas: 1
+  selector:
+    matchLabels:
+      app: ledger-db
+  template:
+    metadata:
+      labels:
+        app: ledger-db
+        tier: database
+    spec:
+      containers:
+        - name: ledger-db
+          image: us-central1-docker.pkg.dev/bank-of-anthos-ci/bank-of-anthos/ledger-db:v0.6.8
+          ports:
+            - containerPort: 5432
+              name: postgres
+          env:
+            - name: POSTGRES_USER
+              value: "admin"
+            - name: POSTGRES_PASSWORD
+              value: "admin"
+            - name: POSTGRES_DB
+              value: "postgresdb"
+            - name: USE_DEMO_DATA
+              value: "True"
+            - name: PGDATA
+              value: /var/lib/postgresql/data/pgdata
+          readinessProbe:
+            exec:
+              command:
+                - pg_isready
+                - -U
+                - admin
+                - -d
+                - postgresdb
+            initialDelaySeconds: 10
+            periodSeconds: 5
+            timeoutSeconds: 5
+          livenessProbe:
+            exec:
+              command:
+                - pg_isready
+                - -U
+                - admin
+                - -d
+                - postgresdb
+            initialDelaySeconds: 30
+            periodSeconds: 10
+            timeoutSeconds: 5
+          resources:
+            requests:
+              cpu: 100m
+              memory: 256Mi
+            limits:
+              cpu: 500m
+              memory: 512Mi
+          volumeMounts:
+            - name: data
+              mountPath: /var/lib/postgresql/data
+  volumeClaimTemplates:
+    - metadata:
+        name: data
+      spec:
+        accessModes: ["ReadWriteOnce"]
+        resources:
+          requests:
+            storage: 10Gi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: ledger-db-headless
+  namespace: bank-of-anthos
+  labels:
+    app: ledger-db
+spec:
+  clusterIP: None
+  selector:
+    app: ledger-db
+  ports:
+    - port: 5432
+      targetPort: 5432
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: ledger-db
+  namespace: bank-of-anthos
+  labels:
+    app: ledger-db
+spec:
+  type: ClusterIP
+  selector:
+    app: ledger-db
+  ports:
+    - port: 5432
+      targetPort: 5432

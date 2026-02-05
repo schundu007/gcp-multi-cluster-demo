@@ -1,0 +1,64 @@
+# =============================================================================
+# GCP Multi-Cluster Infrastructure Configuration
+# =============================================================================
+# Copy this file to terraform.tfvars and update with your values
+
+# GCP Project ID (required)
+project_id = "your-gcp-project-id"
+
+# Regions for clusters
+region_c1 = "us-central1"
+region_c2 = "us-east1"
+
+# Zones for clusters (multi-zone for HA)
+zones_c1 = ["us-central1-a", "us-central1-b"]
+zones_c2 = ["us-east1-b", "us-east1-c"]
+
+# VPC CIDR blocks
+vpc_c1_cidr = "10.0.0.0/16"
+vpc_c2_cidr = "10.1.0.0/16"
+
+# Subnet CIDR blocks
+subnet_c1_cidr = "10.0.0.0/20"
+subnet_c2_cidr = "10.1.0.0/20"
+
+# GKE Pod CIDR ranges (secondary ranges)
+pods_cidr_c1 = "10.0.16.0/20"
+pods_cidr_c2 = "10.1.16.0/20"
+
+# GKE Service CIDR ranges (secondary ranges)
+services_cidr_c1 = "10.0.32.0/20"
+services_cidr_c2 = "10.1.32.0/20"
+
+# GKE Master CIDR ranges (must be /28)
+master_cidr_c1 = "10.0.48.0/28"
+master_cidr_c2 = "10.1.48.0/28"
+
+# GKE Node configuration
+node_machine_type   = "e2-standard-4"
+node_count_per_zone = 1
+node_disk_size_gb   = 50
+
+# Master authorized networks (add your IP or CIDR)
+# Get your IP: curl -s ifconfig.me
+master_authorized_networks = [
+  {
+    cidr_block   = "YOUR_IP_ADDRESS/32"
+    display_name = "Your workstation"
+  }
+]
+
+# ILB Reserved IPs for C2 backend services
+ilb_ips_c2 = {
+  userservice        = "10.1.100.10"
+  contacts           = "10.1.100.11"
+  balancereader      = "10.1.100.12"
+  transactionhistory = "10.1.100.13"
+  ledgerwriter       = "10.1.100.14"
+}
+
+# ILB Reserved IP for C1 accounts-db
+ilb_ip_accounts_db = "10.0.100.50"
+
+# Environment label
+environment = "demo"

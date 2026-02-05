@@ -1,0 +1,194 @@
+apiVersion: v1
+kind: Secret
+metadata:
+  name: accounts-db-secret
+  namespace: bank-of-anthos
+type: Opaque
+stringData:
+  POSTGRES_USER: "accounts-admin"
+  POSTGRES_PASSWORD: "accounts-pwd"
+  POSTGRES_DB: "accounts-db"
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: accounts-db-config
+  namespace: bank-of-anthos
+data:
+  POSTGRES_DB: "accounts-db"
+  POSTGRES_USER: "accounts-admin"
+  USE_DEMO_DATA: "True"
+  LOCAL_ROUTING_NUM: "883745000"
+  PUB_KEY_PATH: "/tmp/.ssh/publickey"
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: accounts-db-init
+  namespace: bank-of-anthos
+data:
+  0-accounts-schema.sql: |
+    CREATE TABLE IF NOT EXISTS users (
+      accountid VARCHAR(255) PRIMARY KEY,
+      username VARCHAR(255) UNIQUE NOT NULL,
+      passhash BYTEA NOT NULL,
+      firstname VARCHAR(255) NOT NULL,
+      lastname VARCHAR(255) NOT NULL,
+      birthday DATE NOT NULL,
+      timezone VARCHAR(255) NOT NULL,
+      address VARCHAR(255) NOT NULL,
+      state VARCHAR(255) NOT NULL,
+      zip VARCHAR(10) NOT NULL,
+      ssn VARCHAR(11) NOT NULL
+    );
+
+    CREATE TABLE IF NOT EXISTS contacts (
+      username VARCHAR(255) NOT NULL,
+      label VARCHAR(128) NOT NULL,
+      account_num VARCHAR(20) NOT NULL,
+      routing_num VARCHAR(9) NOT NULL,
+      is_external BOOLEAN NOT NULL,
+      PRIMARY KEY (username, label)
+    );
+
+    CREATE INDEX IF NOT EXISTS idx_contacts_username ON contacts(username);
+
+  1-load-testdata.sh: |
+    #!/bin/bash
+    set -e
+
+    TESTDATA_FILE="/docker-entrypoint-initdb.d/testdata.sql"
+    if [ -f "$TESTDATA_FILE" ]; then
+      echo "Loading test data..."
+      psql -v ON_ERROR_STOP=1 --username "$POSTGRES_USER" --dbname "$POSTGRES_DB" < "$TESTDATA_FILE"
+    fi
+
+  testdata.sql: |
+    -- Demo user: testuser / bankofanthos
+    INSERT INTO users (accountid, username, passhash, firstname, lastname, birthday, timezone, address, state, zip, ssn)
+    VALUES
+      ('1011226111', 'testuser', '\x243262243132244c48334f54422e70653948597a31574f746d5a4c75653545396857556a6e416b384c6e6f6c466174584b36756a786e35793575'::bytea, 'Test', 'User', '2000-01-01', 'America/Los_Angeles', '123 Main St', 'CA', '12345', '123-45-6789'),
+      ('1033623433', 'alice', '\x243262243132244c48334f54422e70653948597a31574f746d5a4c75653545396857556a6e416b384c6e6f6c466174584b36756a786e35793575'::bytea, 'Alice', 'Smith', '1985-05-15', 'America/New_York', '456 Oak Ave', 'NY', '10001', '987-65-4321'),
+      ('1055757655', 'bob', '\x243262243132244c48334f54422e70653948597a31574f746d5a4c75653545396857556a6e416b384c6e6f6c466174584b36756a786e35793575'::bytea, 'Bob', 'Johnson', '1990-08-20', 'America/Chicago', '789 Pine Rd', 'IL', '60601', '456-78-9012')
+    ON CONFLICT (accountid) DO NOTHING;
+
+    INSERT INTO contacts (username, label, account_num, routing_num, is_external)
+    VALUES
+      ('testuser', 'Alice', '1033623433', '883745000', false),
+      ('testuser', 'Bob', '1055757655', '883745000', false),
+      ('alice', 'Test User', '1011226111', '883745000', false),
+      ('bob', 'Test User', '1011226111', '883745000', false)
+    ON CONFLICT (username, label) DO NOTHING;
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: accounts-db
+  namespace: bank-of-anthos
+  labels:
+    app: accounts-db
+spec:
+  serviceName: accounts-db-headless
+  replicas: 1
+  selector:
+    matchLabels:
+      app: accounts-db
+  template:
+    metadata:
+      labels:
+        app: accounts-db
+        tier: database
+    spec:
+      containers:
+        - name: accounts-db
+          image: us-central1-docker.pkg.dev/bank-of-anthos-ci/bank-of-anthos/accounts-db:v0.6.8
+          ports:
+            - containerPort: 5432
+              name: postgres
+          env:
+            - name: POSTGRES_USER
+              value: "accounts-admin"
+            - name: POSTGRES_PASSWORD
+              value: "accounts-pwd"
+            - name: POSTGRES_DB
+              value: "accounts-db"
+            - name: USE_DEMO_DATA
+              value: "True"
+            - name: LOCAL_ROUTING_NUM
+              value: "883745000"
+            - name: PGDATA
+              value: /var/lib/postgresql/data/pgdata
+          readinessProbe:
+            exec:
+              command:
+                - pg_isready
+                - -U
+                - accounts-admin
+                - -d
+                - accounts-db
+            initialDelaySeconds: 10
+            periodSeconds: 5
+            timeoutSeconds: 5
+          livenessProbe:
+            exec:
+              command:
+                - pg_isready
+                - -U
+                - accounts-admin
+                - -d
+                - accounts-db
+            initialDelaySeconds: 30
+            periodSeconds: 10
+            timeoutSeconds: 5
+          resources:
+            requests:
+              cpu: 100m
+              memory: 256Mi
+            limits:
+              cpu: 500m
+              memory: 512Mi
+          volumeMounts:
+            - name: data
+              mountPath: /var/lib/postgresql/data
+  volumeClaimTemplates:
+    - metadata:
+        name: data
+      spec:
+        accessModes: ["ReadWriteOnce"]
+        resources:
+          requests:
+            storage: 10Gi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: accounts-db-headless
+  namespace: bank-of-anthos
+  labels:
+    app: accounts-db
+spec:
+  clusterIP: None
+  selector:
+    app: accounts-db
+  ports:
+    - port: 5432
+      targetPort: 5432
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: accounts-db
+  namespace: bank-of-anthos
+  labels:
+    app: accounts-db
+  annotations:
+    networking.gke.io/load-balancer-type: "Internal"
+    networking.gke.io/internal-load-balancer-allow-global-access: "true"
+spec:
+  type: LoadBalancer
+  loadBalancerIP: "10.0.10.50"
+  selector:
+    app: accounts-db
+  ports:
+    - port: 5432
+      targetPort: 5432
