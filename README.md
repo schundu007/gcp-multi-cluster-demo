@@ -164,7 +164,7 @@ kubectl --context gke-c1 port-forward svc/frontend 8085:80 -n bank-of-anthos &
 ## Project Structure
 
 ```
-ciroos/
+gcp-multi-cluster-demo/
 ├── README.md
 ├── terraform/                 # Infrastructure as Code
 │   ├── main.tf
