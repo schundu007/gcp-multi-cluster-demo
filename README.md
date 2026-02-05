@@ -97,13 +97,14 @@ cp terraform.tfvars.example terraform.tfvars
 terraform init
 terraform plan
 terraform apply
+
+```
 <img width="1365" height="164" alt="image" src="https://github.com/user-attachments/assets/c34dfb12-0bf6-4c7b-891f-ab8c3d10a5c3" />
 <img width="1331" height="601" alt="image" src="https://github.com/user-attachments/assets/120b92b1-c179-43b7-b945-d169783378f8" />
 <img width="500" height="511" alt="image" src="https://github.com/user-attachments/assets/fad44b1c-ca4f-4a38-bfee-484457c7a882" />
 <img width="932" height="368" alt="image" src="https://github.com/user-attachments/assets/20c45d0a-2e40-4d9d-920f-50440966085b" />
 <img width="984" height="160" alt="image" src="https://github.com/user-attachments/assets/7f10f3a2-5d92-4839-818c-b455c45dcfd9" />
 <img width="612" height="255" alt="image" src="https://github.com/user-attachments/assets/5b7bd17b-ded7-4983-970f-11930e83889f" />
-```
 
 ### 2. Configure kubectl Contexts
 
