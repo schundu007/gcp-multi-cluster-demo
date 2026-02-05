@@ -17,10 +17,10 @@ This project demonstrates how to build a zero-trust, private multi-cluster archi
 ## Architecture
 
 ```
-┌─────────────────────────────────────────────────────────────────────────────┐
-│                              GCP Project                                     │
-├───────────────────────────────────┬─────────────────────────────────────────┤
-│       us-central1 (C1)            │           us-east1 (C2)                 │
+┌────────────────────────────────────────────────────────────────────────────┐
+│                              GCP Project                                   │
+├───────────────────────────────────┬────────────────────────────────────────┤
+│       us-central1 (C1)            │           us-east1 (C2)                │
 │  ┌─────────────────────────────┐  │  ┌─────────────────────────────────┐   │
 │  │     VPC: vpc-c1             │  │  │      VPC: vpc-c2                │   │
 │  │     10.0.0.0/16             │◄─┼──┼─►    10.1.0.0/16                │   │
@@ -37,7 +37,7 @@ This project demonstrates how to build a zero-trust, private multi-cluster archi
 │  │  │                       │  │  │  │  │  • ledger-db              │  │   │
 │  │  └───────────────────────┘  │  │  │  └───────────────────────────┘  │   │
 │  └─────────────────────────────┘  │  └─────────────────────────────────┘   │
-└───────────────────────────────────┴─────────────────────────────────────────┘
+└───────────────────────────────────┴────────────────────────────────────────┘
 
 Traffic Flows:
   C1 → C2: frontend → [userservice, contacts, balancereader, txnhistory, ledgerwriter]
@@ -160,6 +160,9 @@ kubectl --context gke-c1 port-forward svc/frontend 8085:80 -n bank-of-anthos &
 - Click **RESTORE ACCESS**
 - Metrics recover automatically
 - Services return to **ONLINE**
+
+  <img width="819" height="1174" alt="image" src="https://github.com/user-attachments/assets/2e04b132-3a01-45ae-96f4-1a4048156bac" />
+
 
 ## Project Structure
 
