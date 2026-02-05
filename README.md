@@ -73,8 +73,9 @@ When access is revoked, the demo displays:
 - Scrolling error ticker
 - Live error stream with timestamps
 - Service status with shake animations
-
-  <img width="1873" height="253" alt="image" src="https://github.com/user-attachments/assets/0017a75e-a546-45f7-9496-a581530fe352" />
+<img width="1565" height="584" alt="image" src="https://github.com/user-attachments/assets/372418cb-c8cd-4fd5-9ca2-f3ae8eaa2f77" />
+<img width="1598" height="972" alt="image" src="https://github.com/user-attachments/assets/f716ac30-a546-4994-ac67-0ee1bb5dbac6" />
+<img width="1578" height="970" alt="image" src="https://github.com/user-attachments/assets/c9bcbcda-4387-4d4e-8300-20680ad72536" />
 
 ### SRE Metrics Dashboard
 - **SLO Availability**: 99.95% → 94.2% (when blocked)
@@ -84,6 +85,12 @@ When access is revoked, the demo displays:
 - **MTTR**: 4.2 minutes
 - **MTTI**: 1.8 minutes
 - **MTTA**: 2.4 minutes
+<img width="1592" height="608" alt="image" src="https://github.com/user-attachments/assets/58516918-de48-4fef-b032-0410b3ed9d0b" />
+<img width="1576" height="1075" alt="image" src="https://github.com/user-attachments/assets/e76e8086-a3d7-4d97-aa64-61d8a7851bdf" />
+<img width="1585" height="815" alt="image" src="https://github.com/user-attachments/assets/88916759-52c6-4c10-91f1-098292f2757d" />
+<img width="1584" height="808" alt="image" src="https://github.com/user-attachments/assets/1da230de-a885-490b-9d51-36c2326e3d5c" />
+<img width="1583" height="818" alt="image" src="https://github.com/user-attachments/assets/2880ee66-937d-4811-8e1c-fd1e4561c259" />
+<img width="1585" height="424" alt="image" src="https://github.com/user-attachments/assets/578b2775-fb81-4cbb-8b1b-e5353ad8e4ab" />
 
 ### Embedded Grafana Dashboards
 - Cross-Cluster Metrics
