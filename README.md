@@ -49,12 +49,23 @@ Traffic Flows:
 ```
 
 ## Demo UI Features
+Application Logged in
+<img width="1192" height="938" alt="image" src="https://github.com/user-attachments/assets/83ab36bb-d7b4-4778-a51b-bb6e03449340" />
 
 ### 4-Page Interactive Demo
 1. **Overview** - Problem statement, approach, production roadmap
+<img width="1570" height="633" alt="image" src="https://github.com/user-attachments/assets/c8624b7a-e801-40ef-be22-ec2f1d138b43" />
+<img width="1627" height="538" alt="image" src="https://github.com/user-attachments/assets/fbdbe652-b48c-4e94-9451-0df015dcffc9" />
+
 2. **Architecture** - Visual cluster diagram, design decisions
+<img width="1569" height="557" alt="image" src="https://github.com/user-attachments/assets/2788ea8a-c96f-408d-9c5f-a5056a265359" />
+
 3. **Workflow** - Step-by-step demo flow
+<img width="1593" height="928" alt="image" src="https://github.com/user-attachments/assets/8ead9b8f-cdeb-4872-8eeb-b9d5ef8650d0" />
+
 4. **Live Demo** - Real-time connectivity testing and access control
+<img width="1598" height="602" alt="image" src="https://github.com/user-attachments/assets/9edf25e7-e28a-4f10-865a-dca696082db1" />
+
 
 ### SRE Alert System
 When access is revoked, the demo displays:
@@ -62,6 +73,8 @@ When access is revoked, the demo displays:
 - Scrolling error ticker
 - Live error stream with timestamps
 - Service status with shake animations
+
+  <img width="1873" height="253" alt="image" src="https://github.com/user-attachments/assets/0017a75e-a546-45f7-9496-a581530fe352" />
 
 ### SRE Metrics Dashboard
 - **SLO Availability**: 99.95% → 94.2% (when blocked)
